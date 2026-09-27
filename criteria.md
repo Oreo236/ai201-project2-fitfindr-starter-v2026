@@ -25,9 +25,7 @@ Given a query that matches at least one listing, the agent completes all three
 tool calls and returns a fit card — in at least 4 of 5 tries.
 
 **Why this target:**
-<!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
-     "my search is a plain keyword match and some phrasings will miss" is a
-     real answer. -->
+I chose 4 of 5 because the planned search uses keyword matching, so a reasonable query phrased differently from the listing text may miss even when the rest of the loop works.
 
 ---
 
@@ -37,8 +35,7 @@ Given a query that matches no listings, the agent stops before calling
 `suggest_outfit` and returns a message naming what to change — 5 of 5 tries.
 
 **Why this target:**
-<!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
-     about this path? -->
+I chose 5 of 5 because this is a deterministic branch on an empty search result; it does not depend on model wording or judgment.
 
 ---
 
@@ -54,10 +51,10 @@ Given a query that matches no listings, the agent stops before calling
      compares session["selected_item"] against what actually reached
      suggest_outfit is the shape you're after. -->
 
-
+For five matching-query runs, the `id` in `session["selected_item"]` matches the `id` of the `new_item` received by `suggest_outfit` in 5 of 5 tries.
 
 **Why this target:**
-
+I chose 5 of 5 because forwarding the selected listing is deterministic state handling; model-generated wording should not affect which item is passed.
 
 
 ---
@@ -75,10 +72,10 @@ Given a query that matches no listings, the agent stops before calling
      sentence? A card longer than a caption anyone would post? Any of those can
      be turned into a number. -->
 
-
+Across five calls with the same listing and outfit, at least 4 of 5 fit cards are 2-4 sentences and include the listing's correct price and platform. The wording may vary between cards.
 
 **Why this target:**
-
+I chose 4 of 5 because the model can vary its wording or occasionally omit a detail, but most captions should still be concise and preserve the listing facts.
 
 
 ---
@@ -92,10 +89,10 @@ Given a query that matches no listings, the agent stops before calling
      search respects a price ceiling — anything, as long as it names a number
      or an observable outcome. -->
 
-
+For five search requests with a price ceiling and at least one known in-budget match, `search_listings` returns at least one result and every returned listing is at or below the ceiling in 5 of 5 tries.
 
 **Why this target:**
-
+I chose 5 of 5 because price filtering is deterministic, and returning an over-budget item breaks an explicit user constraint.
 
 
 ---

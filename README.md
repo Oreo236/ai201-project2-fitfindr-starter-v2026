@@ -66,24 +66,24 @@
 
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Filters listings by optional size and maximum price, then ranks the remaining listings by how many request keywords appear in the listing's `title`, `description`, or `style_tags`. Ignore case, discard zero-keyword matches, and keep source order for ties.
+- **Inputs:** `description` (str, request keywords); `size` (str | None, optional); `max_price` (float | None, optional, inclusive ceiling). Size matching is case-insensitive on a complete size token or slash-separated alternative, so `M` matches `S/M` but not `XL`.
+- **Returns:** Up to `SEARCH_RESULT_LIMIT` listing dicts, best match first. Each has `id` (str), `title` (str), `description` (str), `category` (str), `style_tags` (list[str]), `size` (str), `condition` (str), `price` (float), `colors` (list[str]), `brand` (str | None), and `platform` (str).
+- **When it has nothing:** Returns an empty list (`[]`), never `None`.
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Suggests one or two ways to style a new listing, using the user's wardrobe when available.
+- **Inputs:** `new_item` (listing dict with the fields and types listed under `search_listings`); `wardrobe` (dict with `items: list[wardrobe item]`; each item has `id` (str), `name` (str), `category` (str), `colors` (list[str]), `style_tags` (list[str]), and optional `notes` (str | None)).
+- **Returns:** A non-empty string with one or two outfit suggestions; with wardrobe items, suggestions name pieces the user owns.
+- **When it has nothing:** If `wardrobe["items"]` is empty, returns general styling advice for the new item as a non-empty string.
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Writes a short, post-ready caption for the new listing and suggested outfit.
+- **Inputs:** `outfit` (str, the suggestion from `suggest_outfit`); `new_item` (listing dict with the fields and types listed under `search_listings`).
+- **Returns:** A two-to-four-sentence caption that mentions the item, its price, and its platform once each, and gives a specific sense of its vibe.
+- **When it has nothing:** If `outfit` is empty or whitespace, returns a non-empty descriptive message about the listing instead of raising an error.
 
 ---
 
@@ -100,7 +100,7 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If `search_listings` returns an empty list, set `session["error"]` to a message telling the user what to change (for example, the item description, size, or price limit) and return the session without calling the other tools. Otherwise, save the results, select the first listing, pass it and the wardrobe to `suggest_outfit`, then pass that suggestion and listing to `create_fit_card`.
 
 **Where it lives:** `agent.py::run_agent`
 

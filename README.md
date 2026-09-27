@@ -37,6 +37,13 @@
 
 <!-- ═══════════════════════ UNIT 3 — THE BUILD ═══════════════════════ -->
 
+## Milestone 1: Data Notes
+
+- **Listing fields:** `id`, `title`, `description`, `category`, `style_tags`, `size`, `condition`, `price`, `colors`, `brand`, `platform`. `brand` can be `null`.
+- **Wardrobe item fields:** `id`, `name`, `category`, `colors`, `style_tags`, and optional `notes` (which can be `null`).
+- **Empty wardrobe:** `{"items": []}`.
+- **Starter check:** `python app.py ask 'vintage graphic tee under $30'` ran and printed `The planning loop isn't built yet — see the TODO in agent.py.` This is the expected starter behavior.
+
 ## What This Does
 
 <!-- Three or four sentences: what a user asks for, and what they get back. -->

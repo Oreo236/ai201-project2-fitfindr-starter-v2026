@@ -26,7 +26,14 @@
      This is your submission. Fill each section in as you finish the milestone
      it belongs to — don't leave it all to the end.
 
-     Unit 3 asks for the first five sections. Unit 4 adds the five below them.
+ **What it does:** Writes a short, post-ready caption for the new listing and suggested outfit.
+ **Uncached three-run fit-card test command:**
+$ AI201_CACHE=0 python -c "from tools import create_fit_card; from utils.data_loader import load_listings; item=load_listings()[0]; outfit='jeans and white sneakers'; print('\\n---\\n'.join(create_fit_card(outfit, item) for _ in range(3)))"
+Scored these classic vintage Levi's 501 jeans on Depop for just $38.00, and I am obsessed with the perfectly worn-in medium wash and subtle knee fading. They have that ultimate effortless streetwear vibe that makes any outfit look instantly cool. Throw them on with crisp white sneakers and a simple tee for the easiest everyday uniform.
+---
+Nothing beats the authentic lived-in fade of these classic vintage Levi's 501 jeans, bringing the ultimate effortless streetwear vibe to your wardrobe. Style them simply with a crisp tee and white sneakers for an easy, timeless look. Grab this exact pair on Depop for just $38.00 before someone else does!
+---
+Scored these classic vintage Levi's 501 jeans with the perfect broken-in indigo wash and subtle knee fading for just $38 on Depop. They have that ultimate effortless streetwear vibe that instantly grounds any outfit. Style them with crisp white sneakers and a simple tee for an easy, timeless look.
      Leave the unit 4 sections alone until then; they're here so you know
      what's coming.
 
@@ -127,18 +134,35 @@ $ python app.py ask '...'
 **The three tools, tested one at a time**
 
 ```
-$ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
+$ python -c "from tools import search_listings; print(search_listings('butterfly', size='M', max_price=18))"
+[{'id': 'lst_002', 'title': 'Y2K Baby Tee — Butterfly Print', 'description': 'Super cute early 2000s baby tee with butterfly graphic. Fitted crop length. Tag says medium but fits like a small.', 'category': 'tops', 'style_tags': ['y2k', 'vintage', 'graphic tee', 'cottagecore'], 'size': 'S/M', 'condition': 'excellent', 'price': 18.0, 'colors': ['white', 'pink', 'purple'], 'brand': None, 'platform': 'depop'}]
 
 ```
 
 ```
-$ python -c "from tools import suggest_outfit; ..."
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
+Here are two wearable outfits centered around your new Vintage Levi's 501 Jeans:
+
+**Outfit 1: Casual Streetwear**
+* **Top:** White ribbed tank top
+* **Shoes:** Chunky white sneakers
+* **Accessories:** Black crossbody bag
+
+**Outfit 2: Layered & Edgy**
+* **Top:** Black cropped zip hoodie
+* **Outerwear:** Vintage black denim jacket
+* **Shoes:** Black combat boots
+* **Accessories:** Brown leather belt
 
 ```
 
 ```
-$ python -c "from tools import create_fit_card; ..."
-
+$ AI201_CACHE=0 python -c "from tools import create_fit_card; from utils.data_loader import load_listings; item=load_listings()[0]; outfit='jeans and white sneakers'; print('\\n---\\n'.join(create_fit_card(outfit, item) for _ in range(3)))"
+Scored these classic vintage Levi's 501 jeans on Depop for just $38.00, and I am obsessed with the perfectly worn-in medium wash and subtle knee fading. They have that ultimate effortless streetwear vibe that makes any outfit look instantly cool. Throw them on with crisp white sneakers and a simple tee for the easiest everyday uniform.
+---
+Nothing beats the authentic lived-in fade of these classic vintage Levi's 501 jeans, bringing the ultimate effortless streetwear vibe to your wardrobe. Style them simply with a crisp tee and white sneakers for an easy, timeless look. Grab this exact pair on Depop for just $38.00 before someone else does!
+---
+Scored these classic vintage Levi's 501 jeans with the perfect broken-in indigo wash and subtle knee fading for just $38 on Depop. They have that ultimate effortless streetwear vibe that instantly grounds any outfit. Style them with crisp white sneakers and a simple tee for an easy, timeless look.
 ```
 
 ---

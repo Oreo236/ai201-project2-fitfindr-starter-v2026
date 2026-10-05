@@ -225,11 +225,13 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     item_details = json.dumps(new_item, ensure_ascii=False, indent=2)
     system = (
         "Write a genuine, concise social caption for a secondhand fashion find. "
-        "Return one 2-4 sentence caption, not a list. Mention the item, its "
-        "exact price, and its platform once each. Use the outfit suggestion "
+        "Return one 2-4 sentence caption, not a list. Copy the required listing "
+        "sentence from the prompt exactly once, including its price and platform. "
+        "Do not repeat the price or platform elsewhere. Use the outfit suggestion "
         "and describe the item's vibe specifically. Do not invent listing facts."
     )
     prompt = (
+        f"Required listing sentence (copy verbatim once): {listing_sentence}\n\n"
         f"Listing details:\n{item_details}\n\n"
         f"Suggested outfit:\n{outfit_text}\n\n"
         "Write a post-ready caption using the listing facts and outfit above."

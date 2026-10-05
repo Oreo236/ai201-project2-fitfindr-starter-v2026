@@ -13,9 +13,12 @@ Build and test your three tools in `tools.py` first. Then come here.
     python agent.py          runs both example paths below
 """
 
+import re
+
 import config
 import trace
-from tools import search_listings, suggest_outfit, create_fit_card
+from mcp_client import MCPError, call_tool
+from tools import suggest_outfit, create_fit_card
 from generate import ModelUnavailable
 
 
@@ -63,53 +66,128 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         The session dict. **Check session["error"] first** — if it isn't None,
         the run ended early and the later fields will still be None.
 
-    ─────────────────────────────────────────────────────────────────────────
-    TODO — build this, following the branch rule you wrote in Milestone 2.
-
-      1. Start a session with new_session().
-
-      2. Count the times round the loop, and call trace.check_iterations(count)
-         on each one before you go again. It raises when the count passes
-         MAX_ITERATIONS in config.py — see trace.py.
-
-      3. Parse the query into a description, a size, and a max_price. Regex,
-         string splitting, or asking the model are all fine — say which you
-         chose in your README. Put the result in session["parsed"].
-
-      4. Call search_listings() with what you parsed.
-         Put the results in session["search_results"].
-
-         ⚠️ THIS IS THE BRANCH. If nothing came back:
-              - put a message in session["error"] saying what the user could
-                change — "No results" is not that message
-              - return the session
-              - do NOT call suggest_outfit with nothing
-
-      5. Choose an item — the first result is fine. Put it in
-         session["selected_item"].
-
-      6. Call suggest_outfit() with the selected item and the wardrobe.
-         Put the result in session["outfit_suggestion"].
-
-      7. Call create_fit_card() with the outfit and the item.
-         Put the result in session["fit_card"].
-
-      8. Return the session.
-
-    ─────────────────────────────────────────────────────────────────────────
-    IN UNIT 4 you come back and add two things:
-
-      • Trace calls. One per step. `trace.step("search_listings", inputs=...,
-        returned=...)` — see trace.py. Your README needs the output.
-
-      • A handler for ModelUnavailable, so a bad key produces a message rather
-        than a stack trace. The import is already at the top of this file.
-    """
+     The query is parsed with regular expressions. Listing search runs over MCP;
+     an empty result stops before either model-backed tool. ModelUnavailable is
+     caught at both model tools and returned as an actionable session error.
+     Each executed step is recorded in the trace.
+     """
     session = new_session(query, wardrobe)
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
-    return session
+    iteration = 0
+    while True:
+        iteration += 1
+        trace.check_iterations(iteration)
+
+        price_match = re.search(
+            r"\b(?:under|below|less than|at most|max(?:imum)?)\s+\$?(\d+(?:\.\d+)?)\b",
+            query,
+            re.IGNORECASE,
+        )
+        size_match = re.search(
+            r"\b(?:size\s+|in\s+size\s+)([A-Za-z0-9]+(?:/[A-Za-z0-9]+)*)",
+            query,
+            re.IGNORECASE,
+        )
+        description = query
+        if price_match:
+            description = description.replace(price_match.group(0), " ")
+        if size_match:
+            description = description.replace(size_match.group(0), " ")
+        parsed = {
+            "description": re.sub(r"\s+", " ", description).strip(" ,"),
+            "size": size_match.group(1) if size_match else None,
+            "max_price": float(price_match.group(1)) if price_match else None,
+        }
+        session["parsed"] = parsed
+        trace.step("parse_query", inputs=query, returned=parsed)
+
+        search_inputs = parsed.copy()
+        try:
+            results = call_tool("search_listings", search_inputs)
+        except MCPError as exc:
+            trace.step(
+                "search_listings (via MCP)",
+                inputs=search_inputs,
+                returned=f"MCPError: {exc}",
+            )
+            session["error"] = (
+                "The listing search service could not be reached. Check that the "
+                "MCP server is available, then try your search again. "
+                f"Details: {exc}"
+            )
+            return session
+
+        session["search_results"] = results
+        trace.step("search_listings (via MCP)", inputs=search_inputs, returned=results)
+        if not results:
+            session["error"] = (
+                "No listings matched. Try a broader item description, a different "
+                "size, or a higher price limit."
+            )
+            trace.step(
+                "empty_search_branch",
+                inputs={"result_count": 0},
+                returned=session["error"],
+                note="stopping before suggest_outfit",
+            )
+            return session
+
+        session["selected_item"] = results[0]
+        selected_item = session["selected_item"]
+        trace.step(
+            "select_item",
+            inputs={"result_count": len(results)},
+            returned=selected_item,
+        )
+
+        try:
+            outfit = suggest_outfit(selected_item, session["wardrobe"])
+        except ModelUnavailable as exc:
+            trace.step(
+                "suggest_outfit",
+                inputs=(
+                    f"new_item.id={selected_item.get('id')}, "
+                    f"wardrobe_items={len(session['wardrobe'].get('items') or [])}"
+                ),
+                returned=f"ModelUnavailable: {exc}",
+            )
+            session["error"] = (
+                "The outfit suggestion model could not be reached. Check your API "
+                "key and internet connection, then try again. "
+                f"Details: {exc}"
+            )
+            return session
+        session["outfit_suggestion"] = outfit
+        trace.step(
+            "suggest_outfit",
+            inputs=(
+                f"new_item.id={selected_item.get('id')}, "
+                f"wardrobe_items={len(session['wardrobe'].get('items') or [])}"
+            ),
+            returned=outfit,
+        )
+
+        try:
+            fit_card = create_fit_card(outfit, selected_item)
+        except ModelUnavailable as exc:
+            trace.step(
+                "create_fit_card",
+                inputs=f"item.id={selected_item.get('id')}, outfit={outfit}",
+                returned=f"ModelUnavailable: {exc}",
+            )
+            session["error"] = (
+                "The fit-card model could not be reached. Check your API key and "
+                "internet connection, then try again. "
+                f"Details: {exc}"
+            )
+            return session
+        session["fit_card"] = fit_card
+        trace.step(
+            "create_fit_card",
+            inputs=f"item.id={selected_item.get('id')}, outfit={outfit}",
+            returned=fit_card,
+        )
+        return session
 
 
 # ── running it directly ───────────────────────────────────────────────────────
